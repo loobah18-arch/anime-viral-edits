@@ -1,0 +1,60 @@
+name: 🎬 MrBeast Viral Edits (Chainsaw Man Style)
+
+on:
+  schedule:
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+    inputs:
+      video_count:
+        description: 'Number of videos to create'
+        required: false
+        default: '1'
+      duration:
+        description: 'Video duration in seconds'
+        required: false
+        default: '60'
+      upload_to_youtube:
+        description: 'Upload to YouTube'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  create_viral_edit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 🎥 Install FFmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install gdown google-api-python-client google-auth-oauthlib
+
+      - name: 📁 Download clips
+        run: python download_clips.py
+
+      - name: 🎬 Create edits
+        run: python create_viral_edit.py
+
+      - name: 📤 Upload to YouTube
+        if: inputs.upload_to_youtube == true
+        env:
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+        run: python upload_to_youtube.py
